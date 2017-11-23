@@ -20,7 +20,7 @@
 
 using namespace std;
 
-#define XDIM 500
+#define XDIM 200
 #define YDIM 200
 
 #define Re 0.1
@@ -42,8 +42,8 @@ const double centre[2] = { XDIM/2., 0.};
 
 //const double c_space = LENGTH/2.;
 
-const int c_num = 10;		
-const int c_sets = 10/c_num;
+const int c_num = 4;		
+const int c_sets = 4/c_num;
 
 const double TAU = (SPEED*LENGTH) / (Re*C_S*C_S) + 1. / 2.;
 
@@ -123,40 +123,7 @@ void print(const double * r, const double * z, const string& directory, const in
 
 }
 
-void printvector (const double * v, const string& directory, const int& time)
-{
-	unsigned int j(0);
 
-
-	FILE* f;
-
-	string output = directory;
-	output += "/";
-	output += to_string(time);
-	output += "-vector";
-	output += ".txt";
-
-	while (fopen_s(&f, output.c_str(), "w") != 0)
-	{
-
-		printf("Could not open the vector file\n");
-		abort();
-	}
-
-	for (j = 0; j < XDIM*YDIM; j++)
-	{
-		fprintf(f, "%f\t%f\n", v[2 * j + 0], v[2 * j + 1]);
-	
-	}
-
-	fclose(f);
-
-	//cout << output.c_str() << endl;
-
-
-
-
-}
 
 void plot(const string& data_dir, const string& directory, const int& time)
 {
@@ -246,72 +213,7 @@ void plot(const string& data_dir, const string& directory, const int& time)
 
 }
 
-void plotvector(const string& data_dir, const string& directory, const int& time)
-{
 
-	FILE* pipe = _popen("C:/gnuplot/bin/gnuplot.exe", "w");
-
-	if (pipe != NULL)
-	{
-
-
-		//fprintf(pipe, "set term pngcairo\n");
-		//fprintf(pipe, "clear\n");
-
-		string data = data_dir;
-
-		string output = directory;
-
-		output += "/";
-		
-		output += "zero-";
-		if (ITERATIONS > 100 && time < 100) output += "0";
-		if (ITERATIONS > 1000 && time < 1000) output += "0";
-		if (ITERATIONS > 10000 && time < 10000) output += "0";
-		output += to_string(time);
-		output += ".png";
-
-		int xmin = nearbyint(centre[0] - LENGTH);
-		int xmax = nearbyint(centre[0] + 3 * LENGTH);
-		int canvasx = nearbyint(5 * 4 * LENGTH);
-
-		fprintf(pipe, "set term win\n");
-		fprintf(pipe, "cd '%s'\n", data.c_str());
-		fprintf(pipe, "unset key\n");
-		fprintf(pipe, "unset xtics\n");
-		fprintf(pipe, "unset ytics\n");
-		fprintf(pipe, "set palette rgb 33, 13, 10\n");
-		fprintf(pipe, "scale = 10\n");
-		//fprintf(pipe, "set style arrow 3 head filled size screen 0.025,30,45\n");
-		fprintf(pipe, "set terminal pngcairo size %d,%d\n", canvasx , 5*YDIM/5);
-		fprintf(pipe, "unset colorbox\n");
-
-		//fprintf(pipe, "load 'LBimg.gp'\n");
-		fprintf(pipe, "set xrange[%d:%d]\n", xmin, xmax);
-		fprintf(pipe, "set yrange[%d:%d]\n", YDIM*2/5, YDIM*3/5);
-
-		//fprintf(pipe, "set term pngcairo\n");
-		fprintf(pipe, "set output \"%s\"\n", output.c_str());
-
-		//fprintf(pipe, "plot '%d-velocity.dat'  using 1:2:($3*scale):($4*scale):5 every 1:2 with vectors filled lc palette\n", time);
-		fprintf(pipe, "plot '%d-zero.dat'  using 1:2 with points pt 5 pointsize 1,  'circle.dat' with dots linetype rgb \"black\"\n", time);
-		fprintf(pipe, "unset output\n");
-
-
-
-		//fprintf(pipe, "replot\n");
-
-		//fprintf(pipe, "set term win\n");
-
-
-		fflush(pipe);
-	}
-	else puts("Could not open the file\n");
-
-	fclose(pipe);
-
-
-}
 
 
 int main()
@@ -977,7 +879,7 @@ int main()
 
 		}
 
-		interpolate << <1, 1000 >> > (d_rho, d_u, d_Ns, d_u_s, d_F_s, d_s, d_XDIM);											//IB INTERPOLATION STEP
+		interpolate << <1, 400 >> > (d_rho, d_u, d_Ns, d_u_s, d_F_s, d_s, d_XDIM);											//IB INTERPOLATION STEP
 
 		{
 			cudaStatus = cudaGetLastError();
@@ -1126,7 +1028,7 @@ int main()
 	cout << mins << ":";
 	if (secs < 10) cout << 0;
 	cout << secs << endl;
-	cout << "Net Q = " << Q << " Avg Q = " << Q / (it / T) << " Q rate = " << Q / (it)*1000. << "x10^-3" << endl;
+	cout << "Net Q = " << Q << " Avg Q = " << Q / 1.*(it / T) << endl;
 
 	char end_sim = 'n';
 

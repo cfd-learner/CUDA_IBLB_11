@@ -4,7 +4,6 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <Windows.h>
 #include <iomanip>
 #include <ctime>
 
@@ -20,13 +19,13 @@
 
 using namespace std;
 
-#define XDIM 200
+#define XDIM 300
 #define YDIM 200
 
-#define Re 0.1
+#define Re 1
 #define C_S 0.577
 #define ITERATIONS 100000
-#define INTERVAL 500
+#define INTERVAL 1000
 #define RHO_0 1.
 
 #define LENGTH 100
@@ -42,8 +41,8 @@ const double centre[2] = { XDIM/2., 0.};
 
 //const double c_space = LENGTH/2.;
 
-const int c_num = 4;		
-const int c_sets = 4/c_num;
+const int c_num = 6;		
+const int c_sets = 6/c_num;
 
 const double TAU = (SPEED*LENGTH) / (Re*C_S*C_S) + 1. / 2.;
 
@@ -59,71 +58,43 @@ double t_0 = 0.067;						//67ms BEAT PERIOD AT 15Hz
 
 void print(const double * r, const double * z, const string& directory, const int& time)
 {
-	unsigned int j(0), tries(0);
+	unsigned int j(0);
 
 	int x(0), y(0);
 
-	FILE* f;
-
-	double abs(0);
+	double ab(0);
 
 	string output = directory;
 	output += "/";
 	output += to_string(time);
 
-	output += "-matrix";
-	output += ".txt";
+	output += "-vector";
+	output += ".dat";
 
-	while (fopen_s(&f, output.c_str(), "w") != 0 && tries < 20)
-	{
+	ofstream rawfile(output.c_str());
 
-		printf("Could not open the file\n");
-		printf("Trying again.\n");
+	rawfile.open(output.c_str(), ofstream::trunc);
+	rawfile.close();
 
-		//Sleep(1);
-		tries++;
+	rawfile.open(output.c_str(), ofstream::app);
 
-		if (tries >= 15)		abort();
-	}
-
-	//fprintf(f, "#x\ty\tvx\tvy\tv\trho\n\n");
-
-	fclose(f);
-
-	while (fopen_s(&f, output.c_str(), "a") != 0 && tries < 20)
-	{
-
-		printf("Could not open the file\n");
-		printf("Trying again.\n");
-
-		//Sleep(1);
-		tries++;
-
-		if (tries >= 15)		abort();
-	}
-
+	
 	for (j = 0; j < XDIM*YDIM; j++)
 	{
 		x = j%XDIM;
 		y = (j - j%XDIM) / XDIM;
 
-		abs = /*1000000.*(l_0*dx)/(t_0*dt)*/sqrt(z[2 * j + 0] * z[2 * j + 0] + z[2 * j + 1] * z[2 * j + 1]); //SCALED
+		ab = sqrt(z[2 * j + 0] * z[2 * j + 0] + z[2 * j + 1] * z[2 * j + 1]);
 
-		fprintf(f, "%d\t%d\t%f\t%f\t%f\t%f\n", x, y, z[2 * j + 0], z[2 * j + 1], abs, r[j]);
+		rawfile << x << "\t" << y << "\t" << z[2 * j + 0] << "\t" << z[2 * j + 1] << "\t" << ab << "\t" << r[j] << endl;
 
-		if (x == XDIM - 1) fprintf(f, "\n");
+		
+		if (x == XDIM - 1) rawfile << endl; 
 	}
 
-	fclose(f);
-
-	//cout << output.c_str() << endl;
-
-
-
+	rawfile.close();
 
 }
-
-
 
 void plot(const string& data_dir, const string& directory, const int& time)
 {
@@ -133,19 +104,13 @@ void plot(const string& data_dir, const string& directory, const int& time)
 	if (pipe != NULL)
 	{
 
-
-		//fprintf(pipe, "set term pngcairo\n");
-		//fprintf(pipe, "clear\n");
-
 		string data = data_dir;
 		data += "/";
 		data += to_string(time);
-		data += "-matrix.txt";
+		data += "-vector.dat";
 
-		string cilia = "C:/Users/phq16ja/Documents/Data/cilium/raw/Mk3/";
+		string cilia = "Data/cilium/";
 
-		cilia += to_string(T);
-		cilia += "/";
 		cilia += to_string(c_num);
 		cilia += "/";
 		cilia += "cilia-";
@@ -162,7 +127,7 @@ void plot(const string& data_dir, const string& directory, const int& time)
 		if (ITERATIONS > 100000 && time < 100000) output += "0";
 		output += to_string(time);
 		output += "-";
-		output += "matrix";
+		output += "S";
 
 		output += ".png";
 
@@ -172,49 +137,40 @@ void plot(const string& data_dir, const string& directory, const int& time)
 		double s_scale = 1000.*x_scale / t_scale;
 
 		fprintf(pipe, "set term win\n");
-		//fprintf(pipe, "cd '%s'\n", data.c_str());
+		
 		fprintf(pipe, "unset key\n");
-		//fprintf(pipe, "set lmargin screen 0.07\n");
-		//fprintf(pipe, "set rmargin screen 0.85\n");
-		//fprintf(pipe, "set bmargin screen 0.15\n");
+		
 		fprintf(pipe, "xscale = %f\n", x_scale);
 		fprintf(pipe, "tscale = %f\n", t_scale);
 		fprintf(pipe, "sscale = %f\n", s_scale);
 		fprintf(pipe, "path1 = '%s'\n", data.c_str());
 		fprintf(pipe, "path2 = '%s'\n", cilia.c_str());
-		//fprintf(pipe, "unset xtics\n");
-		//fprintf(pipe, "unset ytics\n");
+		
 		fprintf(pipe, "set xrange[0:%f]\n", (XDIM-1)*x_scale);
 		fprintf(pipe, "set yrange[0:%f]\n", (YDIM-1)*x_scale);
-		//fprintf(pipe, "set title 'Single Beating Cilium'\n");
-		//fprintf(pipe, "set xlabel 'x position {/Symbol m}m' offset 0,0.9\n");
-		//fprintf(pipe, "set ylabel 'y position {/Symbol m}m' offset 0.9,0\n");
+		
 		fprintf(pipe, "set palette rgb 33, 13, 10\n");
 		fprintf(pipe, "set terminal pngcairo size %d,%d\n", 2*XDIM, 2*YDIM);
-		//fprintf(pipe, "unset colorbox\n");
+		
 		fprintf(pipe, "set cbrange[0:%f]\n", SPEED*s_scale);
-		//fprintf(pipe, "set cbrange[0:%f]\n", SPEED);
-		fprintf(pipe, " set cblabel 'Speed {/Symbol m}ms^{-1}' offset 0.2,0\n");
+		
+		fprintf(pipe, " set cblabel 'Fluid Speed {/Symbol m}ms^{-1}' offset 0.2,0\n");
 		fprintf(pipe, "set label \"%.2fms\" at %f,%f right tc rgb \"white\" font \", 20\" front \n", t, XDIM*0.99*x_scale, YDIM*0.90*x_scale);
 		fprintf(pipe, "set output \"%s\"\n", output.c_str());
 
-		//fprintf(pipe, "splot '%d-matrix.txt' matrix using ($1*scale):($2*scale):3, 'boundary.dat' with dots lc rgb 'black'\n", time);
-		//fprintf(pipe, "plot path1 using ($1*xscale):($2*xscale):($5*sscale) with image, path2 using (($1+%d/2)*xscale):($2*xscale) with dots lc rgb 'black',  path2 using (($1+%d*1.5)*xscale):($2*xscale) with dots lc rgb 'black', path2 using (($1-%d/2)*xscale):($2*xscale) with dots lc rgb 'black',  path2 using (($1+%d)*xscale):($2*xscale) with dots lc rgb 'black'\n", LENGTH/2*c_num, LENGTH / 2 * c_num, LENGTH / 2 * c_num, XDIM + (LENGTH / 2 * c_num)/2);
-		fprintf(pipe, "plot path1 using ($1*xscale):($2*xscale):($5*sscale) with image, path2 using (($1+%d/2)*xscale):($2*xscale) with lines lc rgb 'black'\n", LENGTH / 2 * c_num);
+		
+		fprintf(pipe, "plot path1 using ($1*xscale):($2*xscale):($5*sscale) with image, path2 using (($1+%d/2)*xscale):($2*xscale) w l lc 'black'\n", LENGTH / 2 * c_num);
 
 
 		fprintf(pipe, "unset output\n");
 		fflush(pipe);
 	}
-	else puts("Could not open the file\n");
+	else puts("Could not open gnuplot\n");
 
 	fclose(pipe);
 
 
 }
-
-
-
 
 int main()
 {
@@ -241,6 +197,22 @@ int main()
 	int blocksize = 500;
 
 	int gridsize = size / blocksize;
+
+	int blocksize2 = c_num*c_sets*LENGTH;
+
+	int gridsize2 = 1;
+
+	if (blocksize2 > 1000)
+	{
+		for (blocksize2 = 1000; blocksize2 > 0; blocksize2 -= LENGTH)
+		{
+			if ((c_num*LENGTH) % blocksize2 == 0)
+			{
+				gridsize2 = (c_num*c_sets*LENGTH) / blocksize2;
+				break;
+			}
+		}
+	}
 
 	int xd = XDIM;
 
@@ -325,10 +297,6 @@ int main()
 
 	int Ns = LENGTH * c_num * c_sets;		//NUMBER OF BOUNDARY POINTS
 
-	double ds = 1.0;
-
-	//double * Numpoints;
-	//Numpoints = new double[2 * (T + 1)];
 
 	double * s;							//BOUNDARY POINTS
 
@@ -507,43 +475,40 @@ int main()
 
 	}
 
-	//----------------------------------------CREATE DIRECTORIES----------------------------------
+	//----------------------------------------DEFINE DIRECTORIES----------------------------------
 
-	string raw_data = "C:/Users/phq16ja/Documents/Data/Raw/C16-";
-	raw_data += to_string(XDIM);
-	raw_data += "x";
-	raw_data += to_string(YDIM);
-	raw_data += "-";
-	raw_data += to_string(Re);
-	raw_data += "/";
+	string raw_data = "Data/Raw/";
+	
 	raw_data += to_string(c_num);
 
-	string img_data = "C:/Users/phq16ja/Documents/Data/Img/C16-";
-	img_data += to_string(XDIM);
-	img_data += "x";
-	img_data += to_string(YDIM);
-	img_data += "-";
-	img_data += to_string(Re);
-	img_data += "/";
+	string img_data = "Data/Img/";
+	
 	img_data += to_string(c_num);
 
-	CreateDirectory(raw_data.c_str(), NULL);
-
-	CreateDirectory(img_data.c_str(), NULL);
 
 	//----------------------------------------BOUNDARY INITIALISATION------------------------------------------------
 
-	string flux = raw_data + "/flux2.dat";
+	string flux = raw_data + "/flux.dat";
 
-	string input = "C:/Users/phq16ja/Documents/Data/cilium/raw/Mk3/";
+	string parameters = raw_data + "/SimLog.txt";
+
+	string input = "Data/cilium/";
+	input += to_string(c_num);
 
 	ifstream fsA(input.c_str());
 
 	ofstream fsB(flux.c_str());
 
+	ofstream fsC(parameters.c_str());
+
 	fsB.open(flux.c_str(), ofstream::trunc);
 
 	fsB.close();
+
+	fsC.open(parameters.c_str(), ofstream::trunc);
+
+	fsC.close();
+
 
 	//----------------------------------------INITIALISE ALL CELL VALUES---------------------------------------
 
@@ -648,10 +613,6 @@ int main()
 			fprintf(stderr, "cudaMemcpy failed!");
 		}
 
-		cudaStatus = cudaMemcpy(force, d_force, 2 * size * sizeof(double), cudaMemcpyDeviceToHost);
-		if (cudaStatus != cudaSuccess) {
-			fprintf(stderr, "cudaMemcpy failed!");
-		}
 
 	}
 
@@ -663,25 +624,40 @@ int main()
 		}
 	}
 
-	//-----------------------------------------------------DISPLAY PARAMETERS------------------------------------------------------------------------
-
-	cout << "\nSize: " << XDIM << "x" << YDIM << endl;
-	cout << "Iterations: " << ITERATIONS << endl;
-	cout << "Reynolds Number: " << Re << endl;
-	cout << "Relaxation times: " << TAU << ", " << TAU2 << endl;
-	//if (TAU <= 0.6) cout << "POSSIBLE INSTABILITY! Relaxation time: " << TAU << endl;
-	//if (TAU >= 2.01) cout << "POSSIBLE INACCURACY! Relaxation time: " << TAU << endl;
-
-	cout << "Spatial step: " << dx*l_0 << "m" << endl;
-	cout << "Time step: " << dt*t_0 << "s" << endl;
-	cout << "Mach number: " << Ma << endl;
-	cout << "Spatial discretisation error: " << l_error << endl;
-	cout << "Time discretisation error: " << t_error << endl;
-	cout << "Compressibility error: " << c_error << endl;
+	cudaStatus = cudaMemcpy(d_f, f, 9 * size * sizeof(double), cudaMemcpyHostToDevice);
+	if (cudaStatus != cudaSuccess) {
+		fprintf(stderr, "cudaMemcpy of f failed!\n");
+	}
 
 
-	cout << "\nThreads per block: " << blocksize << endl;
-	cout << "Blocks: " << gridsize << endl;
+
+	//-----------------------------------------------------OUTPUT PARAMETERS------------------------------------------------------------------------
+
+
+	fsC.open(parameters.c_str(), ofstream::trunc);
+
+	fsC.close();
+
+	fsC.open(parameters.c_str(), ofstream::app);
+
+	fsC << asctime(timeinfo) << endl;
+	fsC << "Size: " << XDIM << "x" << YDIM << endl;
+	fsC << "Iterations: " << ITERATIONS << endl;
+	fsC << "Reynolds Number: " << Re << endl;
+	fsC << "Relaxation times: " << TAU << ", " << TAU2 << endl;
+	//if (TAU <= 0.6) fsC << "POSSIBLE INSTABILITY! Relaxation time: " << TAU << endl;
+	//if (TAU >= 2.01) fsC << "POSSIBLE INACCURACY! Relaxation time: " << TAU << endl;
+
+	fsC << "Spatial step: " << dx*l_0 << "m" << endl;
+	fsC << "Time step: " << dt*t_0 << "s" << endl;
+	fsC << "Mach number: " << Ma << endl;
+	fsC << "Spatial discretisation error: " << l_error << endl;
+	fsC << "Time discretisation error: " << t_error << endl;
+	fsC << "Compressibility error: " << c_error << endl;
+
+
+	fsC << "\nThreads per block: " << blocksize << endl;
+	fsC << "Blocks: " << gridsize << endl;
 
 
 	//--------------------------ITERATION LOOP-----------------------------
@@ -701,10 +677,7 @@ int main()
 
 		if (phase == 0) phase = T;
 
-		input = "C:/Users/phq16ja/Documents/Data/cilium/raw/Mk3/";
-
-		input += to_string(T);
-		input += "/";
+		string input = "Data/cilium/";
 		input += to_string(c_num);
 		input += "/";
 		input += "cilia-";
@@ -783,43 +756,7 @@ int main()
 
 		//---------------------------IMMERSED BOUNDARY LATTICE BOLTZMANN STEPS-------------------
 
-		{
-			cudaStatus = cudaMemcpy(d_u, u, 2 * size * sizeof(double), cudaMemcpyHostToDevice);
-			if (cudaStatus != cudaSuccess) {
-				fprintf(stderr, "cudaMemcpy of u failed!\n");
-			}
-
-			cudaStatus = cudaMemcpy(d_rho, rho, size * sizeof(double), cudaMemcpyHostToDevice);
-			if (cudaStatus != cudaSuccess) {
-				fprintf(stderr, "cudaMemcpy of rho failed!\n");
-			}
-
-			cudaStatus = cudaMemcpy(d_f0, f0, 9 * size * sizeof(double), cudaMemcpyHostToDevice);
-			if (cudaStatus != cudaSuccess) {
-				fprintf(stderr, "cudaMemcpy of f0 failed!\n");
-			}
-
-			cudaStatus = cudaMemcpy(d_F, F, 9 * size * sizeof(double), cudaMemcpyHostToDevice);
-			if (cudaStatus != cudaSuccess) {
-				fprintf(stderr, "cudaMemcpy of F failed!\n");
-			}
-
-			cudaStatus = cudaMemcpy(d_force, force, 2 * size * sizeof(double), cudaMemcpyHostToDevice);
-			if (cudaStatus != cudaSuccess) {
-				fprintf(stderr, "cudaMemcpy of force failed!\n");
-			}
-
-			cudaStatus = cudaMemcpy(d_epsilon, epsilon, Ns * sizeof(double), cudaMemcpyHostToDevice);
-			if (cudaStatus != cudaSuccess) {
-				fprintf(stderr, "cudaMemcpy of epsilon failed!\n");
-			}
-
-			cudaStatus = cudaMemcpy(d_ds, &ds, sizeof(double), cudaMemcpyHostToDevice);
-			if (cudaStatus != cudaSuccess) {
-				fprintf(stderr, "cudaMemcpy of ds failed!\n");
-			}
-
-		}
+		
 
 		equilibrium << <gridsize, blocksize >> > (d_u, d_rho, d_f0, d_force, d_F, d_XDIM, d_YDIM, d_TAU);				//EQUILIBRIUM STEP
 
@@ -828,17 +765,6 @@ int main()
 			if (cudaStatus != cudaSuccess) {
 				fprintf(stderr, "equilibrium launch failed: %s\n", cudaGetErrorString(cudaStatus));
 			}
-
-			cudaStatus = cudaMemcpy(d_f, f, 9 * size * sizeof(double), cudaMemcpyHostToDevice);
-			if (cudaStatus != cudaSuccess) {
-				fprintf(stderr, "cudaMemcpy of f failed!\n");
-			}
-
-			cudaStatus = cudaMemcpy(d_f1, f1, 9 * size * sizeof(double), cudaMemcpyHostToDevice);
-			if (cudaStatus != cudaSuccess) {
-				fprintf(stderr, "cudaMemcpy of f1 failed!\n");
-			}
-
 		}
 
 		collision << <gridsize, blocksize >> > (d_f0, d_f, d_f1, d_F, d_TAU, d_TAU2, d_XDIM, d_YDIM, d_it);						//COLLISION STEP
@@ -858,10 +784,6 @@ int main()
 				fprintf(stderr, "collision launch failed: %s\n", cudaGetErrorString(cudaStatus));
 			}
 
-			cudaStatus = cudaMemcpy(d_u_s, u_s, 2 * Ns * sizeof(double), cudaMemcpyHostToDevice);
-			if (cudaStatus != cudaSuccess) {
-				fprintf(stderr, "cudaMemcpy of u_s failed!\n");
-			}
 		}
 
 		macro << <gridsize, blocksize >> > (d_f, d_u, d_rho, d_XDIM, d_YDIM);											//MACRO STEP
@@ -871,15 +793,9 @@ int main()
 			if (cudaStatus != cudaSuccess) {
 				fprintf(stderr, "collision launch failed: %s\n", cudaGetErrorString(cudaStatus));
 			}
-
-			cudaStatus = cudaMemcpy(d_F_s, F_s, 2 * Ns * sizeof(double), cudaMemcpyHostToDevice);
-			if (cudaStatus != cudaSuccess) {
-				fprintf(stderr, "cudaMemcpy of F_s failed!\n");
-			}
-
 		}
 
-		interpolate << <1, 400 >> > (d_rho, d_u, d_Ns, d_u_s, d_F_s, d_s, d_XDIM);											//IB INTERPOLATION STEP
+		interpolate << <gridsize2, blocksize2 >> > (d_rho, d_u, d_Ns, d_u_s, d_F_s, d_s, d_XDIM);											//IB INTERPOLATION STEP
 
 		{
 			cudaStatus = cudaGetLastError();
@@ -888,28 +804,12 @@ int main()
 			}
 		}
 
-		spread << <gridsize, blocksize >> > (d_rho, d_u, d_f, d_Ns, d_u_s, d_F_s, d_force, d_s, d_epsilon, d_XDIM, d_ds, d_Q);	//IB SPREADING STEP
+		spread << <gridsize, blocksize >> > (d_rho, d_u, d_f, d_Ns, d_u_s, d_F_s, d_force, d_s, d_XDIM, d_Q);	//IB SPREADING STEP
 
 		{
 			cudaStatus = cudaGetLastError();
 			if (cudaStatus != cudaSuccess) {
 				fprintf(stderr, "spread launch failed: %s\n", cudaGetErrorString(cudaStatus));
-			}
-
-			cudaStatus = cudaMemcpy(f0, d_f0, 9 * size * sizeof(double), cudaMemcpyDeviceToHost);
-			if (cudaStatus != cudaSuccess) {
-				fprintf(stderr, "cudaMemcpy of f0 failed!\n");
-				system("pause");
-			}
-
-			cudaStatus = cudaMemcpy(f, d_f, 9 * size * sizeof(double), cudaMemcpyDeviceToHost);
-			if (cudaStatus != cudaSuccess) {
-				fprintf(stderr, "cudaMemcpy of f failed!\n");
-			}
-
-			cudaStatus = cudaMemcpy(f1, d_f1, 9 * size * sizeof(double), cudaMemcpyDeviceToHost);
-			if (cudaStatus != cudaSuccess) {
-				fprintf(stderr, "cudaMemcpy of f1 failed!\n");
 			}
 
 			cudaStatus = cudaMemcpy(rho, d_rho, size * sizeof(double), cudaMemcpyDeviceToHost);
@@ -920,26 +820,6 @@ int main()
 			cudaStatus = cudaMemcpy(u, d_u, 2 * size * sizeof(double), cudaMemcpyDeviceToHost);
 			if (cudaStatus != cudaSuccess) {
 				fprintf(stderr, "cudaMemcpy of u failed!\n");
-			}
-
-			cudaStatus = cudaMemcpy(F, d_F, 9 * size * sizeof(double), cudaMemcpyDeviceToHost);
-			if (cudaStatus != cudaSuccess) {
-				fprintf(stderr, "cudaMemcpy of F failed!\n");
-			}
-
-			cudaStatus = cudaMemcpy(force, d_force, 2 * size * sizeof(double), cudaMemcpyDeviceToHost);
-			if (cudaStatus != cudaSuccess) {
-				fprintf(stderr, "cudaMemcpy of force failed!\n");
-			}
-
-			cudaStatus = cudaMemcpy(F_s, d_F_s, 2 * Ns * sizeof(double), cudaMemcpyDeviceToHost);
-			if (cudaStatus != cudaSuccess) {
-				fprintf(stderr, "cudaMemcpy of F_s failed!\n");
-			}
-
-			cudaStatus = cudaMemcpy(u_s, d_u_s, 2 * Ns * sizeof(double), cudaMemcpyDeviceToHost);
-			if (cudaStatus != cudaSuccess) {
-				fprintf(stderr, "cudaMemcpy of u_s failed!\n");
 			}
 
 			cudaStatus = cudaMemcpy(&Q, d_Q, sizeof(double), cudaMemcpyDeviceToHost);
@@ -998,6 +878,10 @@ int main()
 			cout << fixed << setprecision(2) << secs;
 
 			cout << "\nCompletion time: " << asctime(timeinfo) << endl;
+
+			fsC << "\nCompletion time: " << asctime(timeinfo) << endl;
+
+			fsC.close();
 		}
 	}
 
@@ -1021,24 +905,19 @@ int main()
 	if (runtime > 60) mins = nearbyint((runtime - hours * 3600) / 60 - 0.5);
 	secs = runtime - hours * 3600 - mins * 60;
 
-	cout << "\nTotal runtime: ";
-	if (hours < 10) cout << 0;
-	cout << hours << ":";
-	if (mins < 10) cout << 0;
-	cout << mins << ":";
-	if (secs < 10) cout << 0;
-	cout << secs << endl;
-	cout << "Net Q = " << Q << " Avg Q = " << Q / 1.*(it / T) << endl;
+	fsC.open(parameters.c_str(), ofstream::app);
 
-	char end_sim = 'n';
+	fsC << "\nTotal runtime: ";
+	if (hours < 10) fsC << 0;
+	fsC << hours << ":";
+	if (mins < 10) fsC << 0;
+	fsC << mins << ":";
+	if (secs < 10) fsC << 0;
+	fsC << secs << endl;
+	fsC << "Net Q = " << Q << " Avg Q = " << Q / 1.*(it / T) << endl;
 
-	while (end_sim != 'c' && end_sim != 'C')
-	{
-	
-	cout << "\nSimulation complete. Enter 'C' to close window: ";
-	cin >> end_sim;
+	fsC.close();
 
-	}
 
-	return 1;
+	return 0;
 }

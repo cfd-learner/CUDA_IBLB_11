@@ -1,0 +1,21 @@
+Mon Nov 27 14:42:27 2017
+
+Size: 300x200
+Iterations: 100000
+Reynolds Number: 1
+Relaxation times: 2.90291, 0.53468
+Spatial step: 6e-08m
+Time step: 6.7e-07s
+Mach number: 0.0138648
+Spatial discretisation error: 3.6e-15
+Time discretisation error: 4.489e-13
+Compressibility error: 124.694
+
+Threads per block: 500
+Blocks: 120
+
+Completion time: Mon Nov 27 17:29:47 2017
+
+
+Total runtime: 02:40:36.4602
+Net Q = 34787.4 Avg Q = 34787.4

@@ -84,7 +84,7 @@ __global__ void interpolate(const double * rho, const double * u, const int * Ns
 	}
 }
 
-__global__ void spread(const double * rho, double * u, const double * f, const int * Ns, const double * u_s, const double * F_s, double * force, const double * s, const double * epsilon, const int * XDIM, const double * ds, double * Q)
+__global__ void spread(const double * rho, double * u, const double * f, const int * Ns, const double * u_s, const double * F_s, double * force, const double * s, const int * XDIM, double * Q)
 {
 	int i(0), j(0), k(0), x(0), y(0);
 
@@ -108,8 +108,8 @@ __global__ void spread(const double * rho, double * u, const double * f, const i
 			xs = s[k * 2 + 0];
 			ys = s[k * 2 + 1];
 
-			force[2 * j + 0] += F_s[2 * k + 0] * delta(xs, ys, x, y)*/*epsilon[k]*/  ds[0];
-			force[2 * j + 1] += F_s[2 * k + 1] * delta(xs, ys, x, y)*/*epsilon[k]*/  ds[0];
+			force[2 * j + 0] += F_s[2 * k + 0] * delta(xs, ys, x, y)*1.;
+			force[2 * j + 1] += F_s[2 * k + 1] * delta(xs, ys, x, y)*1.;
 		}
 
 		momentum[0] = 0.;

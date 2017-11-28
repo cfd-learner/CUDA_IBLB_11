@@ -12,6 +12,7 @@
 
 #include "LatticeBoltzmann.cuh"
 #include "ImmersedBoundary.cuh"
+#include "BeatProfile.cuh"
 
 #include "seconds.h"
 
@@ -43,6 +44,10 @@ const double centre[2] = { XDIM/2., 0.};
 
 const int c_num = 6;		
 const int c_sets = 6/c_num;
+
+const int p_step = T / c_num;
+const int c_space = 50;
+
 
 const double TAU = (SPEED*LENGTH) / (Re*C_S*C_S) + 1. / 2.;
 
@@ -184,10 +189,12 @@ int main()
 
 	cout << "Initialising...\n";
 
-	unsigned int i(0), j(0), k(0);
+	unsigned int i(0), j(0), k(0), n(0);
 
-	int it(0);
+	int it(0), phase(0);
 	int last(0);
+
+	double offset = (0.);
 
 	const int size = XDIM*YDIM;
 
@@ -317,6 +324,18 @@ int main()
 
 	epsilon = new double[Ns];
 
+	double * lasts;
+	lasts = new double[2 * c_num * Ns];
+
+	double * boundary;
+	boundary = new double[5 * c_num * Ns];
+
+	int Nb(100);
+	int Np = Nb*c_num;
+
+	double * b_points;
+	b_points = new double[4 * Np];
+
 
 	//----------------------------------------CREATE DEVICE VARIABLES-----------------------------
 
@@ -355,6 +374,21 @@ int main()
 
 	double * d_Q;
 
+	int * d_n;
+
+	int * d_c_num;
+
+	int * d_phase;
+
+	double * d_offset;
+
+	double * d_lasts;
+
+	double * d_boundary;
+
+	double * d_b_points;
+
+	int * d_Np;
 	
 
 
@@ -426,6 +460,21 @@ int main()
 			fprintf(stderr, "cudaMalloc failed!");
 		}
 
+		cudaStatus = cudaMalloc((void**)&d_n, sizeof(int));
+		if (cudaStatus != cudaSuccess) {
+			fprintf(stderr, "cudaMalloc failed!");
+		}
+
+		cudaStatus = cudaMalloc((void**)&d_phase, sizeof(int));
+		if (cudaStatus != cudaSuccess) {
+			fprintf(stderr, "cudaMalloc failed!");
+		}
+
+		cudaStatus = cudaMalloc((void**)&d_offset, sizeof(double));
+		if (cudaStatus != cudaSuccess) {
+			fprintf(stderr, "cudaMalloc failed!");
+		}
+
 	}
 
 	{
@@ -450,13 +499,25 @@ int main()
 			fprintf(stderr, "cudaMalloc of epsilon failed!\n");
 		}
 
-
-		cudaStatus = cudaMemcpy(d_Ns, &Ns, sizeof(int), cudaMemcpyHostToDevice);
+		cudaStatus = cudaMalloc((void**)&d_c_num, sizeof(int));
 		if (cudaStatus != cudaSuccess) {
-			fprintf(stderr, "cudaMemcpy of Nsfailed!\n");
+			fprintf(stderr, "cudaMalloc of epsilon failed!\n");
 		}
 
 
+		cudaStatus = cudaMemcpy(d_Ns, &Ns, sizeof(int), cudaMemcpyHostToDevice);
+		if (cudaStatus != cudaSuccess) {
+			fprintf(stderr, "cudaMemcpy of Ns failed!\n");
+		}
+
+		cudaStatus = cudaMalloc((void**)&d_lasts, 2 * c_num * Ns * sizeof(double));
+		if (cudaStatus != cudaSuccess) { fprintf(stderr, "cudaMalloc of lasts failed!\n"); }
+
+		cudaStatus = cudaMalloc((void**)&d_boundary, 5 * c_num * Ns * sizeof(double));
+		if (cudaStatus != cudaSuccess) { fprintf(stderr, "cudaMalloc of boundary failed!\n"); }
+
+		cudaStatus = cudaMalloc((void**)&d_b_points, 4 * Np * sizeof(double));
+		if (cudaStatus != cudaSuccess) { fprintf(stderr, "cudaMalloc of it failed!\n"); }
 	}
 
 	//----------------------------------------DEFINE DIRECTORIES----------------------------------
@@ -575,6 +636,11 @@ int main()
 			fprintf(stderr, "cudaMemcpy failed!");
 		}
 
+		cudaStatus = cudaMemcpy(d_c_num, &c_num, sizeof(int), cudaMemcpyHostToDevice);
+		if (cudaStatus != cudaSuccess) {
+			fprintf(stderr, "cudaMemcpy failed!");
+		}
+
 	}
 
 	//------------------------------------------------------SET INITIAL DISTRIBUTION TO EQUILIBRIUM-------------------------------------------------
@@ -656,7 +722,7 @@ int main()
 		if (cudaStatus != cudaSuccess) { fprintf(stderr, "cudaMemcpy of it failed!\n"); }
 
 		//--------------------------IMPORT CILIUM DATA-------------------------
-
+/*
 		int phase = (it) % T;
 
 		if (phase == 0) phase = T;
@@ -709,9 +775,43 @@ int main()
 
 			
 		}
+*/
+		for (int n = 0; n < c_sets; n++)
+		{
+
+			for (n = 0; n < c_num; n++)
+			{
+				if (it + n*p_step == T) phase = T;
+				else phase = (it + n*p_step) % T;
+
+				offset = 1.*(n - (c_num - 1) / 2.)*c_space;
+
+				//----------------------------------------------HOST TO DEVICE------------------------------------------
+				{
+					cudaStatus = cudaMemcpy(d_n, &n, sizeof(int), cudaMemcpyHostToDevice);
+					if (cudaStatus != cudaSuccess) { fprintf(stderr, "cudaMemcpy of n failed!\n"); }
+
+					cudaStatus = cudaMemcpy(d_phase, &phase, sizeof(int), cudaMemcpyHostToDevice);
+					if (cudaStatus != cudaSuccess) { fprintf(stderr, "cudaMemcpy of phase failed!\n"); }
+
+					cudaStatus = cudaMemcpy(d_offset, &offset, sizeof(double), cudaMemcpyHostToDevice);
+					if (cudaStatus != cudaSuccess) { fprintf(stderr, "cudaMemcpy of offset failed!\n"); }
+				}
+				//------------------------------------------------------------------------------------------------------
 
 
+				define_filament << <10, 1000 >> > (d_n, d_phase, d_offset, d_boundary, d_lasts);
 
+				cudaStatus = cudaGetLastError();
+				if (cudaStatus != cudaSuccess) { fprintf(stderr, "define_filament failed: %s\n", cudaGetErrorString(cudaStatus)); }
+
+				define_boundary << <1, Nb >> > (d_n, d_boundary, d_c_num, d_b_points);
+
+				cudaStatus = cudaGetLastError();
+				if (cudaStatus != cudaSuccess) { fprintf(stderr, "define_boundary failed: %s\n", cudaGetErrorString(cudaStatus)); }
+
+			}
+		}
 		//---------------------------CILIUM COPY---------------------------------------- 
 
 		{
@@ -779,7 +879,7 @@ int main()
 			}
 		}
 
-		interpolate << <gridsize2, blocksize2 >> > (d_rho, d_u, d_Ns, d_u_s, d_F_s, d_s, d_XDIM);											//IB INTERPOLATION STEP
+		interpolate << <gridsize2, blocksize2 >> > (d_rho, d_u, d_Ns, d_b_points, d_F_s, d_XDIM);											//IB INTERPOLATION STEP
 
 		{
 			cudaStatus = cudaGetLastError();
@@ -788,7 +888,7 @@ int main()
 			}
 		}
 
-		spread << <gridsize, blocksize >> > (d_rho, d_u, d_f, d_Ns, d_u_s, d_F_s, d_force, d_s, d_XDIM, d_Q);	//IB SPREADING STEP
+		spread << <gridsize, blocksize >> > (d_rho, d_u, d_f, d_Ns, d_F_s, d_force, d_b_points, d_XDIM, d_Q);	//IB SPREADING STEP
 
 		{
 			cudaStatus = cudaGetLastError();

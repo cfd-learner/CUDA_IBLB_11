@@ -47,7 +47,7 @@ __device__ double delta(const double & xs, const double & ys, const int & x, con
 	return delta;
 }
 
-__global__ void interpolate(const double * rho, const double * u, const int * Ns, const double * u_s, double * F_s, const double * s, const int * XDIM)
+__global__ void interpolate(const double * rho, const double * u, const int * Ns, const double * b_points, double * F_s, const int * XDIM)
 {
 
 	int i(0), j(0), k(0), x0(0), y0(0), x(0), y(0);
@@ -62,8 +62,8 @@ __global__ void interpolate(const double * rho, const double * u, const int * Ns
 		F_s[2 * k + 0] = 0.;
 		F_s[2 * k + 1] = 0.;
 
-		xs = s[k * 2 + 0];
-		ys = s[k * 2 + 1];
+		xs = b_points[k * 4 + 0];
+		ys = b_points[k * 4 + 1];
 
 		x0 = nearbyint(xs);
 		y0 = nearbyint(ys);
@@ -77,14 +77,14 @@ __global__ void interpolate(const double * rho, const double * u, const int * Ns
 
 			//std::cout << delta << std::endl;
 
-			F_s[2 * k + 0] += 2.*(1. * 1. * delta(xs, ys, x, y))*rho[j] * (u_s[2 * k + 0] - u[2 * j + 0]);
-			F_s[2 * k + 1] += 2.*(1. * 1. * delta(xs, ys, x, y))*rho[j] * (u_s[2 * k + 1] - u[2 * j + 1]);
+			F_s[2 * k + 0] += 2.*(1. * 1. * delta(xs, ys, x, y))*rho[j] * (b_points[4 * k + 2] - u[2 * j + 0]);
+			F_s[2 * k + 1] += 2.*(1. * 1. * delta(xs, ys, x, y))*rho[j] * (b_points[4 * k + 3] - u[2 * j + 1]);
 		}
 
 	}
 }
 
-__global__ void spread(const double * rho, double * u, const double * f, const int * Ns, const double * u_s, const double * F_s, double * force, const double * s, const int * XDIM, double * Q)
+__global__ void spread(const double * rho, double * u, const double * f, const int * Ns, const double * F_s, double * force, const double * b_points, const int * XDIM, double * Q)
 {
 	int i(0), j(0), k(0), x(0), y(0);
 
@@ -105,8 +105,8 @@ __global__ void spread(const double * rho, double * u, const double * f, const i
 
 		for (k = 0; k < Ns[0]; k++)
 		{
-			xs = s[k * 2 + 0];
-			ys = s[k * 2 + 1];
+			xs = b_points[k * 4 + 0];
+			ys = b_points[k * 4 + 1];
 
 			force[2 * j + 0] += F_s[2 * k + 0] * delta(xs, ys, x, y)*1.;
 			force[2 * j + 1] += F_s[2 * k + 1] * delta(xs, ys, x, y)*1.;

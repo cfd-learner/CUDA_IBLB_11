@@ -19,11 +19,13 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <CudaCompile Include="BeatProfile.cu" />
     <CudaCompile Include="ImmersedBoundary.cu" />
     <CudaCompile Include="LatticeBoltzmann.cu" />
     <CudaCompile Include="main.cu" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BeatProfile.cuh" />
     <ClInclude Include="ImmersedBoundary.cuh" />
     <ClInclude Include="LatticeBoltzmann.cuh" />
     <ClInclude Include="seconds.h" />

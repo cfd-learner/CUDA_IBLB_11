@@ -1,4 +1,4 @@
-Tue Nov 28 12:25:22 2017
+Tue Nov 28 20:03:01 2017
 
 Size: 300x200
 Iterations: 100000
@@ -13,3 +13,6 @@ Compressibility error: 124.694
 
 Threads per block: 500
 Blocks: 120
+
+Completion time: Wed Nov 29 07:15:30 2017
+

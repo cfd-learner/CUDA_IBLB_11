@@ -228,10 +228,7 @@ int main()
 
 	//DIMENSIONS FOR DEVICE
 	{
-		cudaStatus = cudaSetDevice(0);
-		if (cudaStatus != cudaSuccess) {
-			fprintf(stderr, "cudaSetDevice failed!  Do you have a CUDA-capable GPU installed?");
-		}
+		
 
 		cudaStatus = cudaMalloc((void**)&d_XDIM, sizeof(int));
 		if (cudaStatus != cudaSuccess) {
@@ -353,11 +350,8 @@ int main()
 
 	double * d_epsilon;
 
-	int * d_i;
-
 	int * d_it;
 
-	double * d_ds;
 
 	double * d_Q;
 
@@ -422,21 +416,11 @@ int main()
 			fprintf(stderr, "cudaMalloc failed!");
 		}
 
-		cudaStatus = cudaMalloc((void**)&d_i, sizeof(int));
-		if (cudaStatus != cudaSuccess) {
-			fprintf(stderr, "cudaMalloc failed!");
-		}
-
 		cudaStatus = cudaMalloc((void**)&d_it, sizeof(int));
 		if (cudaStatus != cudaSuccess) {
 			fprintf(stderr, "cudaMalloc failed!");
 		}
-
-		cudaStatus = cudaMalloc((void**)&d_ds, sizeof(double));
-		if (cudaStatus != cudaSuccess) {
-			fprintf(stderr, "cudaMalloc failed!");
-		}
-
+		
 		cudaStatus = cudaMalloc((void**)&d_Q, sizeof(double));
 		if (cudaStatus != cudaSuccess) {
 			fprintf(stderr, "cudaMalloc failed!");
@@ -891,9 +875,6 @@ int main()
 
 	fsB.close();
 	
-	cudaStatus = cudaDeviceReset();
-	if (cudaStatus != cudaSuccess) { fprintf(stderr, "cudaDeviceReset failed!"); return 1; }
-
 	double end = seconds();
 
 	double runtime = end - start;

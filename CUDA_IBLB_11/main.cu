@@ -824,7 +824,7 @@ int main()
 
 			if (last >= INTERVAL)
 			{
-				plot(raw_data, img_data, last);
+				//plot(raw_data, img_data, last);
 				
 			}
 

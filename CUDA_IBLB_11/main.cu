@@ -95,7 +95,7 @@ void print(const double * r, const double * z, const string& directory, const in
 	rawfile.close();
 
 }
-
+/*
 void plot(const string& data_dir, const string& directory, const int& time)
 {
 
@@ -171,7 +171,7 @@ void plot(const string& data_dir, const string& directory, const int& time)
 
 
 }
-
+*/
 int main()
 {
 	//----------------------------INITIALISING----------------------------

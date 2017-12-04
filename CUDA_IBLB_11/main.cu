@@ -794,6 +794,7 @@ int main()
 			cudaStatus = cudaGetLastError();
 			if (cudaStatus != cudaSuccess) {
 				fprintf(stderr, "spread launch failed: %s\n", cudaGetErrorString(cudaStatus));
+				return 1;
 			}
 
 			cudaStatus = cudaMemcpy(rho, d_rho, size * sizeof(double), cudaMemcpyDeviceToHost);
@@ -808,7 +809,7 @@ int main()
 
 			cudaStatus = cudaMemcpy(&Q, d_Q, sizeof(double), cudaMemcpyDeviceToHost);
 			if (cudaStatus != cudaSuccess) {
-				fprintf(stderr, "cudaMemcpy failed!");
+				fprintf(stderr, "cudaMemcpy of Q failed!");
 			}
 
 
@@ -867,6 +868,7 @@ int main()
 
 			fsC.close();
 		}
+
 	}
 
 	fsB.open(flux.c_str(), ofstream::app);

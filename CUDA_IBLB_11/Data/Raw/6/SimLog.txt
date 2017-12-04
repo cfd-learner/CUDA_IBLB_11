@@ -1,4 +1,4 @@
-Wed Nov 29 12:14:55 2017
+Mon Dec  4 12:25:26 2017
 
 Size: 300x200
 Iterations: 100000
@@ -14,8 +14,5 @@ Compressibility error: 124.694
 Threads per block: 500
 Blocks: 120
 
-Completion time: Wed Nov 29 15:39:41 2017
+Completion time: Mon Dec  4 15:37:00 2017
 
-
-Total runtime: 03:11:15.1997
-Net Q = 34763.8 Avg Q = 34763.8

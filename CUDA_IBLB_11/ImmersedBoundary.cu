@@ -4,11 +4,11 @@
 
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
-#include "Immersedboundary.cuh"
+#include "ImmersedBoundary.cuh"
 
 #define PI 3.14159
-__device__ const double RHO_0 = 1.;
-__device__ const double C_S = 0.57735;
+//__device__ const double RHO_0 = 1.;
+//__device__ const double C_S = 0.57735;
 
 __device__ const double c_l[9 * 2] =		//VELOCITY COMPONENTS
 {
